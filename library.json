@@ -1,0 +1,27 @@
+{
+    "name": "gpioSwitchInput",
+    "version": "0.2.10",
+    "description": "Common interface for local(direct on the MCU) GPIO pins connected to switches. This is to provide a common interface to deals with different types of switches e.g. Push, toggle etc. And also to have the same interface to other libraries dealing with IO Expanders etc. ",
+    "keywords": "GPIO IO Switch Input",
+    "repository":
+    {
+      "type": "git",
+      "url": "git@github.com:home-controller/pinIO.git"
+    },
+    "authors":
+    [
+      {
+        "name": "jmnc2",
+        "email": "49760581+jmnc2@users.noreply.github.com",
+        "url": "https://github.com/jmnc2/pinIO",
+        "maintainer": true
+
+      }
+    ],
+    "dependencies": {
+    },
+    "license": "MIT",
+    "homepage": "https://github.com/jmnc2",
+    "frameworks": "*",
+    "platforms": "*"
+  }
