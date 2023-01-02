@@ -2,22 +2,27 @@
 #include "gpioSwitchInput.h"
 
 #include <defs.h>
-//#include <Arduino.h>
-//#include <CDC.cpp>
-//#include </home/jmnc2/.platformio/packages/framework-arduino-avr/cores/arduino/HardwareSerial.h>
-//#include "O.h"
-#include <avr/wdt.h>
-//#include <EEPROM.h>
-//#include "mqtt.h"
+// #include <Arduino.h> // is needed for analogRead(),digitalRead(),pinMode(), millis() and the #defines A6,A7
 
+
+// #include <CDC.cpp>
+// #include </home/jmnc2/.platformio/packages/framework-arduino-avr/cores/arduino/HardwareSerial.h>
+// #include "O.h"
+//#include <avr/wdt.h>
+// #include <EEPROM.h>
+// #include "mqtt.h"
+#ifndef _defs_h
+#define ioLocalPin 0 // see defs.h
+#endif
 
 gpioSwitchInputC::gpioSwitchInputC(byte n, byte offSetN, byte stateA[], byte pinsA[]) : nOfPins(n), offset(offSetN)
 {
-    // nOfPins = n;
-    switchStateA = stateA + offset;
-    gpioInA = pinsA + offset;
-    // offset = offSetN;
-    SetUpInputs();
+  // nOfPins = n;
+  switchStateA = stateA + offset;
+  gpioInA = pinsA + offset;
+  // offset = offSetN;
+  lastMils = millis();
+  SetUpInputs();
 }
 
 /**
@@ -49,27 +54,28 @@ boolean gpioSwitchInputC::ReadSwitch(byte i)
 {
   byte pin;
   pin = gpioInA[i];
-  #ifdef __AVR_ATmega328P__
-    return digitalReadATmega328P(pin);
-  #else
-    return digitalRead(pin);
-  #endif
+#ifdef __AVR_ATmega328P__
+  return digitalReadATmega328P(pin);
+#else
+  return digitalRead(pin);
+#endif
 }
 
 /**
  * @brief Set the GPIO input pints to INPUT_PULLUP and set the switchStateA[] arrary
- * 
+ *
  */
 void gpioSwitchInputC::SetUpInputs()
 {
-    //   nOfPins = n;
-    // switchStateA = stateA;
-    // gpioInA=pinsA;
+  //   nOfPins = n;
+  // switchStateA = stateA;
+  // gpioInA=pinsA;
 
   byte i;
   // Serial.println(F("Todo: still only MCU pins input. No expanders") );//expanders etc. should be in different unit maybe.
   for (i = 0; i < nOfPins; i++)
   {
+#ifdef gpioDebug
     Serial.print(F("MCU pin '"));
     Serial.print(gpioInA[i]);
     if (gpioInA[i] >= A0)
@@ -78,9 +84,10 @@ void gpioSwitchInputC::SetUpInputs()
       Serial.print(gpioInA[i] - A0);
       Serial.print(")");
     }
+#endif
 
-    Serial.print(F("' set to input, Switch No. = "));
-    Serial.println(i);
+    // Serial.print(F("' set to input, Switch No. = "));
+    // Serial.println(i);
     pinMode(gpioInA[i], INPUT_PULLUP); // sets the input pins as input. Pullup works on A0 to A5 but A6 & A7 still float
     // pinMode(gpioInA[i], INPUT);      // sets the input pins as input. If not use pullup may be able to detect bad connection.
     if (ReadSwitch(i))
@@ -94,8 +101,10 @@ void gpioSwitchInputC::SetUpInputs()
   }
 }
 
+#ifdef _debug_switches
 void gpioSwitchInputC::debugSwitch(byte i)
 {
+
   Serial.print(F("i: "));
   Serial.print(i);
   Serial.print(F(", pin: "));
@@ -127,6 +136,7 @@ void gpioSwitchInputC::debugSwitch(byte i)
   Serial.print(F(", analogRead: "));
   Serial.println(analogRead(gpioInA[i]));
 }
+#endif
 
 /**
  * @brief Update the 'current state' bit in gpioInA[] array.
@@ -134,17 +144,14 @@ void gpioSwitchInputC::debugSwitch(byte i)
  * This updates the 'current state' bit in switchState array for each switch.
  * This will overwrite the value without updating any other bits, eg. count.
  *
- * If any pins are A6 or A7 on arduino digital read and INPUT_PULLUP don't work.
+ * If any pins are A6 or A7 then arduino digital read and INPUT_PULLUP don't work.
  */
 void gpioSwitchInputC::getInputStates()
 {
   byte i;
   bool s;
-#ifdef _debug_switches
-  //#define _debug_switches_gis
-#endif
-//#define _debug_switches_gis
-#ifdef _debug_switches_gis
+#ifdef gpioDebug
+  // #define _debug_switches_gis
   Serial.println(F("entering getInputStates()"));
 #endif
 
@@ -153,16 +160,18 @@ void gpioSwitchInputC::getInputStates()
     s = ReadSwitch(i);
     if (s != ((switchStateA[i] >> 1) bitand 0b1))
     {
+#ifdef gpioDebug
       Serial.print(F("Switch("));
       Serial.print(i);
       Serial.println(F(") state changed"));
-      //debugSwitch(i);
+#endif
+      // debugSwitch(i);
       if (s)
       {
         switchStateA[i] |= 0b10;
       }
       else
-      {                                    //   76543210
+      {                               //   76543210
         switchStateA[i] &= (~(0b10)); // 0b11111101; //(~(0b10));
       }
     }
@@ -208,9 +217,14 @@ void gpioSwitchInputC::Switched(byte sw_i, byte count, byte state)
 { // Count 0 is quick on. sw = 0 for first switch
   // some of this should be moved to elsewhere this lib should just keep track of what switch was switched and
   // maybe call a function pointer to handle any switching of lights etc.
+  #ifdef gpioDebug
   Serial.println(F("Called Switched"));
-  if( callbackSwitched != nullptr) {callbackSwitched(ioLocalPin, sw_i, offset, count, state);}
-  //gotInputPin( ioLocalPin, sw_i, count, state);
+  #endif
+  if (callbackSwitched != nullptr)
+  {
+    callbackSwitched(ioLocalPin, sw_i, offset, count, state);
+  }
+  // gotInputPin( ioLocalPin, sw_i, count, state);
 }
 
 void gpioSwitchInputC::SwitchesExe()
@@ -239,8 +253,8 @@ void gpioSwitchInputC::SwitchesExe()
     if (state1 == pinState) // work out if switch changed when states(see above) are the same
     {
       if ((count1 bitand 0b1) > 0) // if a number is odd the low order bit is set(ie. = 1).
-      {                             // if count is an odd number and states are the same then changed.
-        count1++;                   // count odd and state1 = pinState, hence switch has changed position
+      {                            // if count is an odd number and states are the same then changed.
+        count1++;                  // count odd and state1 = pinState, hence switch has changed position
         // Serial.print(F("Switch ") ); Serial.print(i); Serial.print(F(" changed. line:") ); Serial.println(__LINE__);
         time1 = 0;
       }
@@ -266,7 +280,7 @@ void gpioSwitchInputC::SwitchesExe()
 #endif
           Switched(i, 0, 1); // Switch relays etc.
         }
-        count1++;  // as changed add to changed count
+        count1++; // as changed add to changed count
       }
       else
       { // if not change then add to time since last switch

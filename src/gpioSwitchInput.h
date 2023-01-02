@@ -2,7 +2,7 @@
  * @file gpioSwitchInput.h
  * @author Jmnc2 (on github)
  * @brief handles local input MCU pins. Switches connected directly to a GPIO pin
- * @version 0.2
+ * @version 0.2.11
  * @date 2023-01-02
  *
  * @copyright Copyright (c) 2023
@@ -16,6 +16,15 @@
 #define _gpio_in_h
 
 #include "Arduino.h"
+
+// #ifndef byte
+// typedef __UINT8_TYPE__ uint8_t;
+// typedef uint8_t byte;
+// typedef bool boolean;
+// #define HIGH 0x1
+// #define LOW  0x0
+// #define INPUT_PULLUP 0x2
+// #endif
 
 // #define inPins A7,A6,A0,A1,A2
 // #define no_of_switches 5
@@ -64,17 +73,14 @@ private:
     byte *switchStateA; // pointer to array of bytes used to store the stat of the switch.
     byte *gpioInA;      // Array of the GPIO pin numbers used. As this and the above are pointes to an array it can point to the start of the array inside a bigger array.
     byte offset = 0;    // This is only used with the callback func.
-    unsigned long lastMils = millis();
+    unsigned long lastMils;
 
     // void (*callbackSwitched)(byte, byte, byte, byte, byte) = nullptr;
     CallbackT callbackSwitched = nullptr;
 
     void SetUpInputs();
-    boolean checkInput();
+    //boolean checkInput();
 
-    boolean ReadSwitch(byte i);
-    void groupSet(byte i, byte relays9_16, byte relays1_8, byte opts = 0);
-    void setSwitchGroups(byte switchN, byte quick_i, byte normal_i, byte count2_i, byte count3_i, byte count4_i);
     void debugSwitch(byte i);
     void getInputStates();
     void Switched(byte sw_i, byte count, byte state);
@@ -82,27 +88,13 @@ private:
 public:
     gpioSwitchInputC(byte n, byte offSetN, byte stateA[], byte pinsA[]);
     void SetCallback(CallbackT fncP) { callbackSwitched = fncP; }
+
+    boolean ReadSwitch(byte i);
     //~gpioSwitchInputC();
     void SwitchesExe();
 
     static boolean digitalReadATmega328P(byte pin);
 };
 
-// gpioSwitchInputC::~gpioSwitchInputC()
-// {
-// }
-
-// callback func.
-/**
- * @brief Callback func for when a local IO input/switch pin has changed.
- *
- * @param ioType the IO type: ioLocalPin or ioLocalPinVal defied in defs.h
- * @param i index of pin in gpioInA[i]
- * @param count switch flick count.
- * @param state new state of the switch IO pin.
- * @param quick true if still counting flicks
- */
-extern void gotInputPin(byte ioType, byte i, byte count, byte state);
-void debugSwitch(byte i);
 
 #endif
