@@ -1,12 +1,12 @@
 # GPIO Switch Input
 
 Local MCU GPIO pin input: wall light switches.
-       1: Keeps track of current state. On, off etc.
-       2: make sure any change in state is not checked again for a bit to de-bounce switches etc.
-       3: keep track of quick switches, slower than debounce but faster than a second or 2 for extra functionality.
+       1. Keeps track of current state. On, off etc.
+       2. make sure any change in state is not checked again for a bit to de-bounce switches etc.
+       3. keep track of quick switches, slower than debounce but faster than a second or 2 for extra functionality.
           Turning all light on for example.
-       4: Callback function for when a switch in changed.
-       5: Only works from a function called in the main loop at the min. For switch flicking count to work will need to be called at least every 1/2 second or so.
+       4. Callback function for when a switch in changed.
+       5. Only works from a function called in the main loop at the min. For switch flicking count to work will need to be called at least every 1/2 second or so.
 
 ## dependencies
 

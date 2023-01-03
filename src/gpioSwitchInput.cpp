@@ -231,7 +231,7 @@ void gpioSwitchInputC::SwitchesExe()
 #ifdef _debug_switches
   // Serial.println(F("entering SwitchesExe()") );
 #endif
-  if ((millis() - lastMils) < (1000 / 4)) // 1/8th of a second. If called just under 1/8 of a second and again 1/8 later.
+  if ((millis() - lastMils) < (1000 / 4)) // 1/4th of a second. If called just under 1/8 of a second and again 1/8 later.
   {                                       // Could be 1/4 second between switch checks even when called at close to every 1/8th second.
     return;
   }
