@@ -28,8 +28,9 @@ I am using this with my wired ethernet web page and MQTT light controller code.
 
 ## To use
 
+See "example" folder for example code.
+
 At top of main.h or .ino etc. add
-/example folder may have more and/or (more up to date) examples
 
 ```c++
  #define pinIO_no_of_switches 5 //setup the number of gpio's used
@@ -38,6 +39,8 @@ At top of main.h or .ino etc. add
  byte pinIO_pinsA_in[pinIO_no_of_switches] = {pinIO_inPins};
  gpioSwitchInputC gpioIn(pinIO_no_of_switches, 0, pinIO_switchState, pinIO_pinsA_in);
 ```
+
+In setup function add a callback function.
 
  Then in main loop.
 
