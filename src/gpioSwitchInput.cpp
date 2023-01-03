@@ -4,11 +4,10 @@
 #include <defs.h>
 // #include <Arduino.h> // is needed for analogRead(),digitalRead(),pinMode(), millis() and the #defines A6,A7
 
-
 // #include <CDC.cpp>
 // #include </home/jmnc2/.platformio/packages/framework-arduino-avr/cores/arduino/HardwareSerial.h>
 // #include "O.h"
-//#include <avr/wdt.h>
+// #include <avr/wdt.h>
 // #include <EEPROM.h>
 // #include "mqtt.h"
 #ifndef _defs_h
@@ -158,7 +157,7 @@ void gpioSwitchInputC::getInputStates()
   for (i = 0; i < nOfPins; i++)
   {
     s = ReadSwitch(i);
-    if (s != ((switchStateA[i] >> 1) bitand 0b1))
+    if (s != ((switchStateA[i] >> 1) bitand 0b1)) // if changed since last check
     {
 #ifdef gpioDebug
       Serial.print(F("Switch("));
@@ -166,14 +165,13 @@ void gpioSwitchInputC::getInputStates()
       Serial.println(F(") state changed"));
 #endif
       // debugSwitch(i);
-      if (s)
+      // xor returns 1 where the bits are different.
+      if ((((switchStateA[i] >> 1) xor (switchStateA[i])) bitand 0b1) == 0b1) // if bits 0010 and 0001 are different(curent and update switch pos)
       {
-        switchStateA[i] |= 0b10;
+        if ((switchStateA[i] bitand 0b1100) < 0b1100)
+          switchStateA[i] += (byte)0b100;
       }
-      else
-      {                               //   76543210
-        switchStateA[i] &= (~(0b10)); // 0b11111101; //(~(0b10));
-      }
+      switchStateA[i] = switchStateA[i] xor 0b10; // xor flips any bit where 1 side is 1.
     }
 /*
  * switchState[i]:
@@ -215,16 +213,13 @@ void gpioSwitchInputC::getInputStates()
  */
 void gpioSwitchInputC::Switched(byte sw_i, byte count, byte state)
 { // Count 0 is quick on. sw = 0 for first switch
-  // some of this should be moved to elsewhere this lib should just keep track of what switch was switched and
-  // maybe call a function pointer to handle any switching of lights etc.
-  #ifdef gpioDebug
+#ifdef gpioDebug
   Serial.println(F("Called Switched"));
-  #endif
+#endif
   if (callbackSwitched != nullptr)
   {
     callbackSwitched(ioLocalPin, sw_i, offset, count, state);
   }
-  // gotInputPin( ioLocalPin, sw_i, count, state);
 }
 
 void gpioSwitchInputC::SwitchesExe()
@@ -232,87 +227,68 @@ void gpioSwitchInputC::SwitchesExe()
   byte state1;   // The state that is pushed to the lights, MQTT etc.
   byte pinState; // The new up to date GPIO pin state. Lights, MQTT etc. may still need updating.
   byte i, count1, time1;
+
 #ifdef _debug_switches
   // Serial.println(F("entering SwitchesExe()") );
 #endif
-  if ((millis() - lastMils) < (1000 / 8)) // 1/8th of a second. If called just under 1/8 of a second and again 1/8 later.
+  if ((millis() - lastMils) < (1000 / 4)) // 1/8th of a second. If called just under 1/8 of a second and again 1/8 later.
   {                                       // Could be 1/4 second between switch checks even when called at close to every 1/8th second.
     return;
   }
   getInputStates(); // update the curent switch state bit. Just that, no turning on lights etc.
   for (i = 0; i < nOfPins; i++)
   {
-    if (switchStateA[i] == 0 or switchStateA[i] == 0b11)
-    {
-      continue;
-    } // If everything is up to date then skip to check next switch;
     state1 = switchStateA[i] bitand 0b1;
     pinState = (switchStateA[i] >> 1) bitand 0b1;
-    count1 = (switchStateA[i] >> 2) bitand 0b11; // bits B00001100
+    count1 = state1 xor pinState;
+    count1 |= (switchStateA[i] >> 1) bitand 0b110;
     time1 = switchStateA[i] >> 4;
-    if (state1 == pinState) // work out if switch changed when states(see above) are the same
+    if ((count1 == 0) and ((time1==0)or (time1==0b1111)))
+      continue; // If everything is up to date then skip to check next switch;
+    //if(switchStateA[i]==0b00010011)
+    if (time1 >= 0b1111) // Switch flicking disabled.
     {
-      if ((count1 bitand 0b1) > 0) // if a number is odd the low order bit is set(ie. = 1).
-      {                            // if count is an odd number and states are the same then changed.
-        count1++;                  // count odd and state1 = pinState, hence switch has changed position
-        // Serial.print(F("Switch ") ); Serial.print(i); Serial.print(F(" changed. line:") ); Serial.println(__LINE__);
-        time1 = 0;
-      }
-      else
-      { // count even and state1 = pinState, hence no change
-        if (count1 > 0)
-        {
-          time1++;
-        } //  Add to timeout
-      }
-    }
-    else
-    { // States are different.
-      if ((count1 & 0b1) == 0)
-      { // check if switch state changed since last call.
-        // count is even and state1 != pinState, hence changed
-        time1 = 0; // reset time since last change
-        // Serial.print(F("Switch ") ); Serial.print(i); Serial.print(F(" changed. line:") ); Serial.println(__LINE__);
-        if (count1 == 0)
-        {
-#ifdef _debug_switches
-          Serial.print(F("Call quick light on func: "));
-#endif
-          Switched(i, 0, 1); // Switch relays etc.
-        }
-        count1++; // as changed add to changed count
-      }
-      else
-      { // if not change then add to time since last switch
-        // count is odd and state1 != pinState, hence not changed
-        time1++; // Serial.print(time1,HEX);
-
-      } //
-    }
-    if (count1 >= 4 || time1 >= 0b1111)
-    { // reached max change count or time since last change > 2 seconds
-#ifdef _debug_switches
-      Serial.print(F("Switch state update "));
-      Serial.print(F(", count1 = "));
-      Serial.print(count1);
-      Serial.print(F(", timeout in 1/8 seconds = "));
-      Serial.print(time1);
-      Serial.print(F(", switch No. = "));
-      Serial.println(i);
-#endif
-      // count1 = (count1  >> 1) + 1;
-      Switched(i, count1, pinState); // Switch relays etc.
-      // and update switchState[i] to curent state
+      Switched(i, 1, 1);
       if (pinState > 0)
-        switchStateA[i] = 0b11;
+        switchStateA[i] = 0xf0 + 0b11;
       else
-        switchStateA[i] = 0;
+        switchStateA[i] = 0xf0;
     }
     else
     {
-      switchStateA[i] &= 0b11;
-      switchStateA[i] |= (count1 << 2);
-      switchStateA[i] |= (time1 << 4);
+      if ((count1 == 1) and (time1 == 0) and (pinState == 1)) // first switch, with flick count.
+      {
+        Switched(i, 0, 1);         // Switch relays etc. Quick call
+                                   // save time1 = 1 back to the array
+                                   // switchStateA[i] &= (byte)0b1111;
+        switchStateA[i] = 0b10010; //
+      }
+      else if (count1 >= 7 || time1 >= 0b1001) // check for max flicks or timeout after 2 seconds. max is 0v1110 as 0xf is no switch flick 8+1=9
+      {                                        // reached max change count or time since last change > 2 seconds
+#ifdef _debug_switches
+        Serial.print(F("Switch state update "));
+        Serial.print(F(", count1 = "));
+        Serial.print(count1);
+        Serial.print(F(", timeout in 1/8 seconds = "));
+        Serial.print(time1);
+        Serial.print(F(", switch No. = "));
+        Serial.println(i);
+#endif
+        Switched(i, count1, pinState); // Switch relays etc.
+        // and update switchState[i] to curent state
+        // reset time and count.
+        if (pinState > 0)
+          switchStateA[i] = 0b11;
+        else
+          switchStateA[i] = 0;
+      }
+      else
+      {
+        switchStateA[i] &= (byte)0b1111;
+        if (time1 < 0b1110)
+          time1++;
+        switchStateA[i] |= ((time1) << 4);
+      }
     }
   }
   lastMils = millis();
