@@ -16,10 +16,10 @@ I am using this with my wired ethernet web page and MQTT light controller code.
 4. if the switch was off there is an initial callback so the light can be turned on first without waiting 2 seconds.
 5. Callback function for when a switch in changed.
 6. Only works from a function called in the main loop at the min. For switch flicking count to work will need to be called at least every 1/2 second or   so.
-. Todo add code so it works with the raspberry PI pico and other RP2040 boards
-. [ ] Todo Speed up the Pin state read by using the pin registers instead of using the Arduino DigitalRead() function. Even if it just uses registers to check for change it should help speed up the main loop time. even more important if checking with a timer interrupt.
-. [ ] Maybe add the option to use an timer to check for change instead of calling in the main loop.
-. [ ] The timings on the quick switch change count needs more testing to see haw usable it is is real use.
+7. Todo add code so it works with the raspberry PI pico and other RP2040 boards
+8. [ ] Todo Speed up the Pin state read by using the pin registers instead of using the Arduino DigitalRead() function. Even if it just uses registers to check for change it should help speed up the main loop time. even more important if checking with a timer interrupt.
+9. [ ] Maybe add the option to use an timer to check for change instead of calling in the main loop.
+10. [ ] The timings on the quick switch change count needs more testing to see haw usable it is is real use.
 
 ## dependencies
 
