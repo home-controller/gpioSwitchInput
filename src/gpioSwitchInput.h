@@ -78,9 +78,6 @@ private:
     // void (*callbackSwitched)(byte, byte, byte, byte, byte) = nullptr;
     CallbackT callbackSwitched = nullptr;
 
-    void SetUpInputs();
-    //boolean checkInput();
-
     void debugSwitch(byte i);
     void getInputStates();
     void Switched(byte sw_i, byte count, byte state);
@@ -88,6 +85,9 @@ private:
 public:
     gpioSwitchInputC(byte n, byte offSetN, byte stateA[], byte pinsA[]);
     void SetCallback(CallbackT fncP) { callbackSwitched = fncP; }
+
+    void SetUpInputs();
+    //boolean checkInput();
 
     boolean ReadSwitch(byte i);
     //~gpioSwitchInputC();
