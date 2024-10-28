@@ -36,7 +36,7 @@
  * 2, 3: all hard on/off
  */
 
-/** Check for changes no more than 1/8 of a second, If sending mqtt or web page may be longer?. Should be good for debounce?
+/** Check for changes no more than 1/8 of a second, If sending MQTT or web page may be longer?. Should be good for debounce?
  * If same switch changes again in less than 2 seconds add one to switch state to max of 8.
  * switchState[i]  : 0b0000 0000
  *  state          : 0b0000 0001  Fully updated state, including updated mqtt etc. 0 = off 1 = on
@@ -56,7 +56,8 @@
  *
  * @param ioType
  * @param index into the arrays storing the pin/switch state and the stitch to GPIO pin mapping
- * @param offset inside the arrays.
+ * @param offset inside the arrays. If the arrays are bigger arrays then this is the start of where they are used here. 
+ * Can't remember why I did this, maybe maybe other info stored at the start of the arrays like length etc?
  * @param count of the number of times the switch has been flicked.
  * @param state of the switch.
  *
@@ -65,6 +66,7 @@
  */
 using CallbackT = void (*)(byte, byte, byte, byte, byte);
 
+/// @brief handles local input MCU pins. Switches connected directly to a GPIO pin.
 class gpioSwitchInputC
 {
 private:
@@ -83,6 +85,11 @@ private:
     void Switched(byte sw_i, byte count, byte state);
 
 public:
+    /// @brief  test2
+    /// @param n 
+    /// @param offSetN 
+    /// @param stateA 
+    /// @param pinsA 
     gpioSwitchInputC(byte n, byte offSetN, byte stateA[], byte pinsA[]);
     void SetCallback(CallbackT fncP) { callbackSwitched = fncP; }
 
