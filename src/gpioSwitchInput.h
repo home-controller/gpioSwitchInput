@@ -98,6 +98,7 @@ public:
 
     boolean ReadSwitch(byte i);
     //~gpioSwitchInputC();
+    
     void SwitchesExe();
 
     static boolean digitalReadATmega328P(byte pin);

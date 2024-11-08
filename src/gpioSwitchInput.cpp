@@ -220,7 +220,10 @@ void gpioSwitchInputC::Switched(byte sw_i, byte count, byte state) {  // Count 0
     }
 }
 
-/// @brief This check if any switches have turned on or off etc, only checks if 1/4 of a second has passed to work as debounce and save time.
+/**
+ * @brief This check if any switches have turned on or off etc, only checks if 1/4 of a second has passed to work as debounce and save time.
+ * 
+ */
 void gpioSwitchInputC::SwitchesExe() {
     byte state1;    // The state that is pushed to the lights, MQTT etc.
     byte pinState;  // The new up to date GPIO pin state. Lights, MQTT etc. may still need updating.
