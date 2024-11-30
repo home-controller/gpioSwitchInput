@@ -67,7 +67,7 @@ boolean gpioSwitchInputC::ReadSwitch(byte i) {
 }
 
 /**
- * @brief Set the GPIO input pints to INPUT_PULLUP and set the switchStateA[] arrary
+ * @brief Set the GPIO input pints to INPUT_PULLUP and set the switchStateA[] array
  *
  */
 void gpioSwitchInputC::SetUpInputs() {
